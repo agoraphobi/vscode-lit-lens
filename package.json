@@ -1,0 +1,71 @@
+{
+  "name": "lit-lens",
+  "displayName": "Lit Lens",
+  "description": "Run LLVM lit RUN commands on MLIR sections, selections, or Python lit tests — with full LSP support on output",
+  "version": "0.1.0",
+  "publisher": "akaminer",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akaminer/lit-runner"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Testing", "Other"],
+  "keywords": ["mlir", "llvm", "lit", "filecheck", "compiler"],
+  "activationEvents": [
+    "onLanguage:mlir",
+    "onLanguage:python"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "lit-runner.run",
+        "title": "Lit: Run on selection/section"
+      },
+      {
+        "command": "lit-runner.refreshSubstitutions",
+        "title": "Lit: Refresh substitutions"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "lit-runner.run",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m",
+        "when": "editorTextFocus"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "lit-runner.run",
+          "when": "resourceExtname == .mlir || resourceExtname == .py",
+          "group": "1_modification"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Lit Runner",
+      "properties": {
+        "litRunner.substitutions": {
+          "type": "object",
+          "default": {},
+          "description": "Extra lit %-substitutions as key-value pairs (e.g. {\"%MY_TOOL\": \"/usr/bin/my-tool\"}). These override auto-resolved values."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
+  }
+}
