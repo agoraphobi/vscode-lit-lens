@@ -2,12 +2,12 @@
   "name": "lit-lens",
   "displayName": "Lit Lens",
   "description": "Run LLVM lit RUN commands on MLIR sections, selections, or Python lit tests — with full LSP support on output",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publisher": "akaminer",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/akaminer/lit-runner"
+    "url": "https://github.com/agoraphobi/vscode-lit-lens"
   },
   "engines": {
     "vscode": "^1.80.0"
