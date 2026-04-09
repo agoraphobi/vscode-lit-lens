@@ -93,8 +93,18 @@ export function activate(context: vscode.ExtensionContext) {
         const title = sectionName
           ? `${fileName} → ${sectionName}`
           : `${fileName} → output`;
-        const ext = isMLIR ? ".mlir" : ".py";
-        await showOutput(title, result, ext);
+
+        // For Python files, extract MLIR modules from mixed stdout
+        let outputContent = result;
+        let ext = isMLIR ? ".mlir" : ".py";
+        if (!isMLIR) {
+          const mlir = extractMLIRModules(result);
+          if (mlir) {
+            outputContent = mlir;
+            ext = ".mlir";
+          }
+        }
+        await showOutput(title, outputContent, ext);
       } catch (err: any) {
         const title = `${fileName} → ERROR`;
         await showOutput(title, err.message || String(err), ".txt");
@@ -121,6 +131,69 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(runCommand, refreshCommand);
+}
+
+// ---------------------------------------------------------------------------
+// MLIR extraction from mixed output
+// ---------------------------------------------------------------------------
+
+/**
+ * Clean mixed output from Python lit tests into valid MLIR.
+ * - Lines that are already inside a module block are kept as-is.
+ * - Non-MLIR lines outside modules (like "TEST: ...") are converted
+ *   to MLIR comments ("// ...") so the user can track provenance
+ *   without breaking the MLIR parser / LSP.
+ * - Modules are separated by split-input-file delimiters.
+ * Returns null if no module blocks were found.
+ */
+function extractMLIRModules(output: string): string | null {
+  const lines = output.split("\n");
+  const result: string[] = [];
+  let foundModule = false;
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^module\b/.test(line)) {
+      // Separate modules with split-input-file delimiter
+      if (foundModule) {
+        result.push("\n// -----\n");
+      }
+      foundModule = true;
+
+      // Collect the entire module block by tracking brace depth
+      let depth = 0;
+      for (let j = i; j < lines.length; j++) {
+        for (const ch of lines[j]) {
+          if (ch === '{') { depth++; }
+          if (ch === '}') { depth--; }
+        }
+        result.push(lines[j]);
+        if (depth <= 0) {
+          i = j + 1;
+          break;
+        }
+        if (j === lines.length - 1) {
+          i = j + 1;
+        }
+      }
+    } else {
+      // Outside a module: comment out non-empty, non-comment lines
+      const trimmed = line.trim();
+      if (trimmed.length === 0) {
+        result.push("");
+      } else if (trimmed.startsWith("//")) {
+        result.push(line);
+      } else {
+        result.push(`// ${line}`);
+      }
+      i++;
+    }
+  }
+
+  if (!foundModule) { return null; }
+  return result.join("\n");
 }
 
 // ---------------------------------------------------------------------------
